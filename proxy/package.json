@@ -1,0 +1,29 @@
+{
+  "name": "proxy",
+  "version": "1.0.0",
+  "description": "",
+  "main": "dist/app.js",
+  "scripts": {
+"start": "prisma generate && set NODE_ENV=PRODUCTION & node dist/app.js",
+    "build": "npx tsc -p .",
+    "dev": "prisma generate && nodemon dist/app.js",
+    "watch": "npx tsc -w"
+  },
+  "keywords": [],
+  "author": "",
+  "type": "module",
+  "license": "ISC",
+  "dependencies": {
+    "@prisma/client": "^5.22.0",
+    "express": "4.21.1",
+    "http-proxy": "^1.18.1"
+  },
+  "devDependencies": {
+    "@types/express": "5.0.0",
+    "@types/http-proxy": "^1.17.15",
+    "@types/node": "22.9.0",
+    "nodemon": "3.1.7",
+    "prisma": "^5.22.0",
+    "typescript": "5.6.3"
+  }
+}
