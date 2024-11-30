@@ -6,16 +6,18 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { logEntry } from "@/type";
 import { useGetLogs } from "../hooks/hooks";
 // Simulated function to fetch logs from the server
-
-export default function Logs({ id }: { id: string }) {
+import { renderLog } from "@/lib/renderlog";
+export default function Logs({ project_id,deployment_id }: { project_id:string,deployment_id:string }) {
   const [logs, setLogs] = useState<logEntry[]>([]);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
-  const { data } = useGetLogs(id);
+  const { data,isLoading } = useGetLogs(project_id,deployment_id);
 
  
   useEffect(() => {
     if (data) {
-      setLogs(data.logs);
+      console.log(data)
+      setLogs(data)
+     
 
     }
   }, [data]);
@@ -24,21 +26,11 @@ export default function Logs({ id }: { id: string }) {
 
 
 
-  const renderLog = (log: string) => {
-  
-    return log
-      .replace(/^\n|\n$/g, "")
-      .replace(/\|/g, ",")
-      .split("\n")
-      .map((line, index) => (
-        <p key={index} className="text-sm text-muted-foreground">
-          {line}
-        </p>
-      ));
-  };
+ 
 
 
   return (
+
     <Card className="w-full  mx-auto">
       <CardHeader>
         <CardTitle className="flex justify-between items-center">
@@ -50,7 +42,12 @@ export default function Logs({ id }: { id: string }) {
           className="h-[400px] w-full rounded-md border p-4 "
           ref={scrollAreaRef}
         >
-          {logs.map((log) => (
+         {logs.length === 0 && !isLoading &&(
+          <div className="text-center text-muted-foreground">
+            no logs to display
+        </div>
+         )}
+          {logs && logs.map((log) => (
             <div key={log.event_id} className="mb-2 flex items-start">
               <span className="text-sm text-muted-foreground w-24 flex-shrink-0">
                 {new Date(log.timestamp).toLocaleTimeString()}
@@ -68,9 +65,9 @@ export default function Logs({ id }: { id: string }) {
               </span>
             </div>
           ))}
-          {logs.length === 0 && (
+          {isLoading && (
             <div className="text-center text-muted-foreground">
-              No logs to display
+              loading logs
             </div>
           )}
         </ScrollArea>

@@ -1,9 +1,10 @@
 import express, { Request, Response } from 'express';
 import httpProxy from 'http-proxy';
-import { prisma } from './utils/prisma-client';
+import { prisma } from './utils/prisma-client.js';
+
 
 const app = express();
-const PORT = 8000;
+const PORT = 80;
 
 const BASE_PATH = process.env.BASE_PATH;
 
@@ -13,7 +14,7 @@ app.use(async (req: Request, res: Response): Promise<any> => {
     const hostname = req.hostname;
     const subdomain = hostname.split('.')[0];
     
-    const project = await prisma.project.findUnique({
+    const project = await prisma.project.findFirst({
         where: { subDomain: subdomain },
         select: { id: true }
     });
@@ -25,11 +26,13 @@ app.use(async (req: Request, res: Response): Promise<any> => {
     });
 
     const deploymentId = mainDeployment?.id;
+    console.log(projectId, deploymentId);
     if (!projectId || !deploymentId) {
         return res.status(404).json({ error: 'Project not found' });
     }
 
     const resolvesTo = `${BASE_PATH}/${projectId}/${deploymentId}`;
+    console.log(resolvesTo);
     
     proxy.web(req, res, { target: resolvesTo, changeOrigin: true }, (err) => {
         if (err) {

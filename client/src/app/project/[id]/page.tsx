@@ -10,11 +10,12 @@ import {
 } from "@/components/ui/card"
 import { Loader2, Check, Rocket } from 'lucide-react'
 
-import { useGetproject } from '../hooks/hooks'
+import { useGetProjectById } from '../hooks/hooks'
 
 import Logs from '../components/logs'
 import { Deployement } from '@prisma/client'
 import { ProjectWithDeployment } from '@/type'
+import Link from 'next/link'
 
 
 
@@ -27,7 +28,8 @@ export default function DeployPage({
 
 
 
-  const {data,isLoading} = useGetproject(id)
+  const {data,isLoading} = useGetProjectById(id)
+  console.log(data)
 
   const [project, setProject] = useState<ProjectWithDeployment | null>(null);
 
@@ -35,7 +37,7 @@ console.log(project)
 
 useEffect(() => {
   if (data) {
-    setProject(data[0]);
+    setProject(data);
   }
 }, [data])
 
@@ -95,7 +97,7 @@ useEffect(() => {
                     <span className="font-semibold">Created At:</span> {new Date(project.createdAt).toLocaleString()}
                 </div>
                 <div>
-                  <span className="font-semibold">Allocated link:</span> {project.subDomain}.{process.env.NEXT_PUBLIC_BASE_URL}
+                  <span className="font-semibold">Allocated link:</span><a href={`http://${project.subDomain}.${process.env.NEXT_PUBLIC_BASE_URL}`} target='_blank'>{project.subDomain}.{process.env.NEXT_PUBLIC_BASE_URL}</a> 
   </div>
               </div>
             </CardContent>
@@ -135,7 +137,7 @@ useEffect(() => {
                          
                         </a>
                       </div>
-                      <Logs id={deployment.id}/>
+                      <Logs deployment_id={deployment.id} project_id={id}/>
                     </div>
                     
                   ))}

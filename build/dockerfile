@@ -8,6 +8,9 @@ RUN apt-get install -y nodejs
 
 RUN apt-get install git -y
 RUN npm install -g pnpm
+RUN npm install -g bun
+RUN npm install -g yarn
+
 
 WORKDIR /home/app
 
@@ -17,7 +20,7 @@ COPY package*.json .
 COPY  pnpm-lock.yaml .
 
 
-COPY kafka.pem kafka.pem 
+
 
 RUN pnpm install
 

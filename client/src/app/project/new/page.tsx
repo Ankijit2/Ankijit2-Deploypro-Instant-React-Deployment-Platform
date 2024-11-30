@@ -10,12 +10,25 @@ import { Input } from "@/components/ui/input"
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { ProjectSchema } from '@/type'
-import { createProject } from '../actions/actions'
+import { useCreateProject,useCreateDeployment } from '../hooks/hooks'
 import { io } from 'socket.io-client'
+import { logEntry } from '@/type'
+import { useRouter } from 'next/navigation'
+import { renderLog } from '@/lib/renderlog'
+
 
 export default function Component() {
-    const socket = useMemo(() => io("http://localhost:4000", { withCredentials: true }), []);
-  const [deploymentLogs, setDeploymentLogs] = useState<string[]>([])
+  const router = useRouter()
+    const socket = useMemo(() => io("http://localhost:4000", { withCredentials: true,
+     }), []);
+     const createProjectMutation = useCreateProject();
+     const createDeploymentMutation = useCreateDeployment();
+  const [deploymentLogs, setDeploymentLogs] = useState<logEntry[]>([])
+  const [projectId,setProjectId] = useState<string | null>(null)
+
+  const [deploymentId, setDeploymentId] = useState<string | null>(null);
+  const [deploymentStatus, setDeploymentStatus] = useState<string>('idle');
+
  
 
   const form = useForm<z.infer<typeof ProjectSchema>>({
@@ -27,29 +40,61 @@ export default function Component() {
   })
 
   async function onSubmit(values: z.infer<typeof ProjectSchema>) {
-    console.log("onSubmit", values)
-   const data = await createProject(values) 
-   console.log("data", data)
-   
-  }
-  useEffect(() => {
-    // Subscribe to deployment logs
-    socket.emit('subscribe', "deployment-logs");
+    try {
+        // Create project first
+        const project = await createProjectMutation.mutateAsync(values);
+        console.log(project)
+        if (project?.id) {
+            setProjectId(project.id)
+            const deployment = await createDeploymentMutation.mutateAsync(project.id);
+            console.log(deployment)
+            if (deployment?.id) {
+                setDeploymentId(deployment.id);
+                setDeploymentStatus('QUEUED');
+                socket.emit('subscribe', deployment.id);
+            }
 
-    // Listen for incoming messages
-    const handleNewLog = (newLog: { logs: string }) => {
-      console.log("New Log:", newLog.logs);
-      setDeploymentLogs((prevLogs) => [...prevLogs, newLog.logs]);
-    };
+        }
+        form.reset();
+    } catch (error) {
+        console.error('Deployment creation failed:', error);
+        // You might want to show an error toast or message here
+    }
+}
 
-    socket.on('message', handleNewLog);
+console.log(deploymentId)
 
-    // Clean up on component unmount
-    return () => {
-      socket.off('message', handleNewLog);
-      socket.disconnect();
-    };
-  }, [socket]);
+useEffect(() => {
+  // Listen for incoming messages
+  const handleNewLog = (data) => {
+      console.log("New Log:", data.logs);
+      
+      setDeploymentLogs((prevLogs) => [...prevLogs, data.logs]);
+      setDeploymentStatus(data.logs.status)
+      
+      if (data.logs.status === 'READY' || data.logs.status === 'FAIL') {
+  
+        console.log(`Deployment ${data.logs.deployment_id} is ${data.logs.status}. Disconnecting...`);
+        socket.emit('unsubscribe', data.logs.deployment_id);
+        socket.disconnect();
+        router.push(`/project/${projectId}`)
+    }
+  };
+  socket.on('message',(data)=>console.log(data))
+
+  socket.on('deployment-logs', handleNewLog);
+
+
+  return () => {
+    socket.off('connect');
+    socket.off('connect_error');
+    socket.off('deployment-logs')
+    socket.off('message');
+};
+
+}, [socket, deploymentId]);
+
+console.log(deploymentStatus)
  
   return (
     <div className="container mx-auto p-4 space-y-8">
@@ -103,20 +148,38 @@ export default function Component() {
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle>Deployment Logs</CardTitle>
           <div className="flex items-center space-x-2">
-            <div className={`w-3 h-3 rounded-full ${
-             
-              'bg-red-400'
-            }`} />
+          <div className={`w-3 h-3 rounded-full ${
+  deploymentStatus === 'READY' ? 'bg-green-400' :
+  deploymentStatus === 'FAIL' ? 'bg-red-400' :
+  deploymentStatus === 'IN_PROGRESS' ? 'bg-yellow-400' :
+  deploymentStatus === 'QUEUED' ? 'bg-blue-400' :
+  'bg-gray-400' // default state for 'idle' or unknown status
+}`} />
             <span className="text-sm font-medium">
-              idle
+              {deploymentStatus}
             </span>
           </div>
         </CardHeader>
         <CardContent>
           <ScrollArea className="h-[200px] w-full rounded border p-4">
             <div className="space-y-2">
-              {deploymentLogs.map((log, index) => (
-                <p key={index} className="text-sm text-black">{log}</p>
+              {deploymentLogs.map((log) => (
+                <div key={log.event_id} className="mb-2 flex items-start">
+                <span className="text-sm text-muted-foreground w-24 flex-shrink-0">
+                  {new Date(log.timestamp).toLocaleTimeString()}
+                </span>
+                <span
+                  className={`flex-grow ${
+                    log.status === "fa"
+                      ? "text-red-600"
+                      : log.status === "success"
+                      ? "text-green-600"
+                      : "text-primary"
+                  }`}
+                >
+                  {renderLog(log.log)}
+                </span>
+              </div>
               ))}
             </div>
           </ScrollArea>

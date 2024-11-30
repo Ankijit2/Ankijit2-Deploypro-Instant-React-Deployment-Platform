@@ -81,17 +81,16 @@ enum DeployementStatus {
 model Project {
   id           String        @id @default(uuid())
   name         String
-  user         User          @relation(fields: [userId], references: [id])     
+  user         User          @relation(fields: [userId],references: [id])     
   userId       String
   gitURL       String       
-  subDomain    String        @unique
-  customDomain String?       @unique
+  subDomain    String        
+  customDomain String?       
   Deployement  Deployement[]
 
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
-
 
 model Deployement {
   id        String            @id @default(uuid())

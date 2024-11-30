@@ -17,7 +17,9 @@ const {
     DEPLOYEMENT_ID,
     KAFKA_BROKER,
     KAFKA_USERNAME,
-    KAFKA_PASSWORD
+    KAFKA_PASSWORD,
+    AWS_BUCKET_NAME,
+    KAFKA_CA
 } = process.env;
 
 // Initialize AWS S3 and Kafka Clients
@@ -33,7 +35,7 @@ const KafkaClient = new Kafka({
     clientId: `docker-build-${PROJECT_ID}-${DEPLOYEMENT_ID}`,
     brokers: [`${KAFKA_BROKER}`],
     ssl: {
-        ca: [fs.readFileSync(path.join(__dirname, 'kafka.pem'), 'utf-8')]
+        ca: KAFKA_CA
     },
     sasl: {
         username: KAFKA_USERNAME,
@@ -172,7 +174,7 @@ async function uploadToS3() {
 
         try {
             const command = new PutObjectCommand({
-                Bucket: 'deploymentoutputs',
+                Bucket: AWS_BUCKET_NAME,
                 Key: `__outputs/${PROJECT_ID}/${DEPLOYEMENT_ID}/${file}`,
                 Body: fs.createReadStream(filePath),
                 ContentType: mime.lookup(filePath) 
