@@ -155,6 +155,7 @@ console.log(deploymentStatus)
   deploymentStatus === 'QUEUED' ? 'bg-blue-400' :
   'bg-gray-400' // default state for 'idle' or unknown status
 }`} />
+
             <span className="text-sm font-medium">
               {deploymentStatus}
             </span>

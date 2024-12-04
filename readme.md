@@ -2,7 +2,17 @@
 
 **DeployPro** is a cutting-edge platform designed to streamline the deployment of React applications. It offers an automated, scalable, and secure solution for building, hosting, and serving static assets with real-time updates.
 
----
+
+
+## 📺 Tutorial Video
+
+Watch the tutorial 
+
+<video controls width="100%" height="auto">
+  <source src="./deploypro.mp4" type="video/mp4">
+  
+</video>
+
 
 ## 🛠️ Tech Stack
 
